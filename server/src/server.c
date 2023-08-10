@@ -4,30 +4,28 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <stdbool.h>
-#include "server_functions.h"
+#include "server_client.h"
 
 #define PORT "1234"
 #define NUM_OF_CONNECTIONS 51
 
-void *handle_new_connections(void *arg)
+void *handle_clients(int server_sockfd)
 {
-    int server_sockfd;
-    struct sockaddr_in client_addr;
-    socklen_t client_addr_len;
-    int client_sockfd;
+    int client_temp_sockfd;
+    void *client_sockfd;
     pthread_t client_thread;
 
-    server_sockfd = *(int *)arg;
-    client_addr_len = sizeof(client_addr);
     while (true)
     {
-        client_sockfd = accept(server_sockfd, (struct sockaddr *)&client_addr, &client_addr_len);
-        if (client_sockfd == -1)
+        client_sockfd = (int *)malloc(sizeof(int));
+        client_temp_sockfd = accept(server_sockfd, NULL, NULL);
+        if (client_temp_sockfd == -1)
         {
             perror("accept");
             continue;
         }
-        pthread_create(&client_thread, NULL, handle_client_functions, (void *)(&client_sockfd));
+        *(int *)client_sockfd = client_temp_sockfd;
+        pthread_create(&client_thread, NULL, server_client_handle_functions, client_sockfd);
         pthread_detach(client_thread);
     }
     return NULL;
@@ -72,10 +70,10 @@ int server_find_valid_address(struct addrinfo *servinfo)
 int main()
 {
     int server_sockfd;
-    pthread_t connection_thread;
     int rv;
     struct addrinfo hints;
     struct addrinfo *servinfo;
+    pthread_t server_thread;
 
     init_chat_rooms();
 
@@ -87,7 +85,7 @@ int main()
     if ((rv = getaddrinfo(NULL, PORT, &hints, &servinfo)) != 0)
     {
         fprintf(stderr, "server: %s\n", gai_strerror(rv));
-        return 1;
+        exit(1);
     }
     server_sockfd = server_find_valid_address(servinfo);
 
@@ -98,7 +96,9 @@ int main()
     }
 
     printf("Waiting for connections\n");
-    pthread_create(&connection_thread, NULL, handle_new_connections, (void *)(&server_sockfd));
+
+    pthread_create(&server_thread, NULL, handle_clients, (void *)&server_sockfd);
+    pthread_detach(server_thread);
 
     return 0;
 }

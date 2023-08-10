@@ -124,17 +124,19 @@ void remove_client(int sockfd)
 
 void send_rooms_list(int sockfd)
 {
-    char line[4];
+    uint8_t rooms_list[(NUM_OF_ROOMS << 1) + 2];
+    uint8_t *rooms_list_ptr;
     uint8_t room_num;
 
+    rooms_list_ptr = rooms_list;
+    *(rooms_list_ptr++) = 202;
+    *(rooms_list_ptr++) = NUM_OF_ROOMS;
     for (room_num = 0; room_num < GIVEN_NUM_OF_ROOMS; room_num++)
     {
-        line[0] = room_num + 1 - '0';
-        line[1] = ' ';
-        line[2] = (chat_rooms[room_num]->num_of_clients / 10) - '0';
-        line[3] = (chat_rooms[room_num]->num_of_clients % 10) - '0';
+        *(rooms_list_ptr++) = room_num + 1;
+        *(rooms_list_ptr++) = chat_rooms[room_num]->num_of_clients;
     }
-    send(sockfd, line, 4, 0);
+    send(sockfd, rooms_list, sizeof(rooms_list) / sizeof(uint8_t), 0);
 }
 
 void send_message_to_room(uint8_t room_id, char *msg, int len)

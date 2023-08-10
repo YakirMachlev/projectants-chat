@@ -7,6 +7,7 @@
 #include <inttypes.h>
 #include <ctype.h>
 #include <string.h>
+#include <pthread.h>
 
 #define MAX_LINE_LENGTH 50
 

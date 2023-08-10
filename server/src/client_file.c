@@ -1,5 +1,7 @@
 #include "clients_file.h"
 
+static pthread_mutex_t file_lock = PTHREAD_MUTEX_INITIALIZER;
+
 bool check_name_validity(char *name)
 {
     uint8_t offset;
@@ -17,6 +19,7 @@ void insert_client_to_file(char *name, char *password)
 {
     FILE *fp;
 
+    pthread_mutex_lock(&file_lock);
     fp = fopen("users.txt", "a");
     assert("Couldn't open the file" && fp);
 
@@ -50,16 +53,19 @@ void get_password_by_name(char *name, char* password)
 
     password = NULL;
     fp = fopen("users.txt", "r");
-    assert("Couldn't open the file" && fp);
-    while (fgets(line, MAX_LINE_LENGTH, fp))
+    
+    if (fp)
     {
-        line_ptr = line;
-        if ((length = compare_until_char(line, name, ',')))
+        while (fgets(line, MAX_LINE_LENGTH, fp))
         {
-            line_ptr += length;
-            strncpy(password, line_ptr, 32);
-            break;
+            line_ptr = line;
+            if ((length = compare_until_char(line, name, ',')))
+            {
+                line_ptr += length;
+                strncpy(password, line_ptr, 32);
+                break;
+            }
         }
+        fclose(fp);        
     }
-    fclose(fp);
 }
