@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "server_functions.h": "c",
+        "clients_file.h": "c",
+        "rooms.h": "c",
+        "inttypes.h": "c",
+        "server_client.h": "c",
+        "server_client_functions.h": "c",
+        "netdb.h": "c",
+        "server_conf.h": "c",
+        "stdbool.h": "c",
+        "string.h": "c"
+    }
+}

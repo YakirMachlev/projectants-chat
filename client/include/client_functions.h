@@ -13,11 +13,11 @@
 typedef enum
 {
     REGISTER_SUCCESS = 200,
-    LOGIN_SUCCESS,
-    LIST_ROOMS,
-    JOIN_ROOM_SUCCESS,
-    SEND_MESSAGE_IN_ROOM,
-    EXIT_ROOM_SUCCESS,
+    LOGIN_RESPONSE,
+    LIST_ROOMS_RESPONSE,
+    JOIN_ROOM_RESPONSE,
+    SEND_MESSAGE_IN_ROOM_RESPONSE,
+    EXIT_ROOM_RESPONSE,
     SEND_SERVER_MESSAGE_IN_ROOM = 211
 } c_func_e;
 
@@ -30,3 +30,10 @@ typedef enum
     SEND_MESSAGE_IN_ROOM_REQUEST,
     EXIT_ROOM_REQUEST
 } s_func_e;
+
+#define INVALID_ACTION "Invalid action"
+#define INVALID_NAME "Invalid name"
+#define WRONG_PASSWORD "Wrong password"
+#define NO_CLIENT "The client with the given name doesn't exist"
+#define NOT_CONNECTED "The client with the given name isn't connected"
+#define CLIENT_CANT_JOIN "Client already in another room / not connected"
