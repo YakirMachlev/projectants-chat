@@ -1,182 +1,175 @@
 #include "server_client_functions.h"
 
+#define CLIENT_DISCONNECT     \
+    client_exit_room(client); \
+    close(client->sockfd);    \
+    pthread_exit(NULL);
+
+#define ASSERT(expression) \
+    if (expression)        \
+    {                      \
+        CLIENT_DISCONNECT  \
+    }
+
+#define CLIENT_FAILED(client, error, opcode) \
+    error[0] = opcode; \
+    error[1] = -1; \
+    send(client->sockfd, error, ERROR_LENGTH, 0);
+
 void client_register(client_t *client, char *buffer)
 {
-    int bytes_received;
-    char name[NAME_MAX_LENGTH];
-    char password[PASSWORD_MAX_LENGTH];
+    char *password;
+    uint8_t error[ERROR_LENGTH];
+    uint8_t name_length;
+    uint8_t password_length;
 
-    if ((bytes_received = recv(client->sockfd, name, NAME_MAX_LENGTH, 0)) == -1)
-    {
-        perror("name recv");
-        close(client->sockfd);
-        return;
-    }
-    name[bytes_received] = '\0';
-    if ((bytes_received = recv(client->sockfd, password, PASSWORD_MAX_LENGTH, 0)) == -1)
-    {
-        perror("password recv");
-        close(client->sockfd);
-        return;
-    }
-    password[bytes_received] = '\0';
+    name_length = *(buffer++);
+    ASSERT(name_length <= NAME_MAX_LENGTH)
+    strncpy(client->name, buffer, name_length);
 
-    if (check_name_validity(name))
+    buffer += name_length;
+    password_length = *(buffer++);
+    ASSERT(password_length <= PASSWORD_MAX_LENGTH)
+    password = buffer;
+    password[password_length] = '\0';
+
+    if (client->state = EXISTS && check_name_validity(client->name))
     {
-        if (1)
+        if (!client_file_does_client_exist(client->name))
         {
-            insert_client_to_file(name, password);
+            insert_client_to_file(client->name, password);
+        }
+        else
+        {
+            CLIENT_FAILED(client, error, REGISTER_RESPONSE);
         }
     }
     else
     {
-        send(client->sockfd, -1, 2, 0);
+        CLIENT_FAILED(client, error, REGISTER_RESPONSE);
     }
 }
 
 void client_login(client_t *client, char *buffer)
 {
-    int bytes_received;
-    char name[NAME_MAX_LENGTH];
-    char password[PASSWORD_MAX_LENGTH];
+    char *name;
+    char *password;
     char written_password[PASSWORD_MAX_LENGTH];
+    uint8_t error[ERROR_LENGTH];
+    uint8_t name_length;
+    uint8_t password_length;
 
-    if ((bytes_received = recv(client->sockfd, name, NAME_MAX_LENGTH, 0)) == -1)
-    {
-        perror("name recv");
-        close(client->sockfd);
-        return;
-    }
-    name[bytes_received] = '\0';
-    if ((bytes_received = recv(client->sockfd, password, PASSWORD_MAX_LENGTH, 0)) == -1)
-    {
-        perror("password recv");
-        close(client->sockfd);
-        return;
-    }
-    password[bytes_received] = '\0';
+    name_length = *(buffer++);
+    ASSERT(name_length <= NAME_MAX_LENGTH)
+    name = buffer;
 
-    get_password_by_name(name, written_password);
-    if (written_password != NULL)
+    buffer += name_length;
+    password_length = *(buffer++);
+    ASSERT(password_length <= PASSWORD_MAX_LENGTH)
+    password = buffer;
+
+    name[name_length] = '\0';
+    password[password_length] = '\0';
+
+    if (client->state = EXISTS && check_name_validity(name))
     {
-        if (strncmp(password, written_password, PASSWORD_MAX_LENGTH) == 0)
+        if (client_file_check_client_validity(name, password))
         {
-            add_client_to_room(name, NUM_OF_ROOMS - 1, client->sockfd);
+            client->state = CONNECTED;
         }
         else
         {
-            send(client->sockfd, -1, 2, 0);
-        }
+            CLIENT_FAILED(client, error, LOGIN_RESPONSE);
+        }    
     }
     else
     {
-        send(client->sockfd, -1, 2, 0);
+        CLIENT_FAILED(client, error, LOGIN_RESPONSE);
     }
 }
 
-void client_list_rooms(client_t *client, char *buffer)
+void client_list_rooms(client_t *client)
 {
-    if (search_client(client->sockfd))
+    uint8_t rooms_list[(NUM_OF_ROOMS << 1) + 2];
+    uint8_t error[ERROR_LENGTH];
+
+    if (client->state == CONNECTED)
     {
-        send_rooms_list(client->sockfd);
+        get_rooms_list(client, rooms_list);
+        send(client->sockfd, rooms_list, sizeof(rooms_list) / sizeof(uint8_t), 0);
     }
     else
     {
-        send(client->sockfd, -1, 2, 0);
+        CLIENT_FAILED(client, error, LIST_ROOMS_RESPONSE);
     }
 }
 
 void client_join_room(client_t *client, char *buffer)
 {
-    int bytes_received;
-    char name[NAME_MAX_LENGTH];
-    char room_str[2];
     uint8_t room_num;
     char connection_msg[NAME_MAX_LENGTH + 12];
+    uint8_t error[ERROR_LENGTH];
+    uint8_t name_length;
 
-    if ((bytes_received = recv(client->sockfd, name, NAME_MAX_LENGTH, 0)) == -1)
-    {
-        perror("name recv");
-        close(client->sockfd);
-        return;
-    }
-    name[bytes_received] = '\0';
-    if ((bytes_received = recv(client->sockfd, room_str, sizeof(room_str) / sizeof(char), 0)) == -1)
-    {
-        perror("room_str recv");
-        close(client->sockfd);
-        return;
-    }
-    room_str[bytes_received] = '\0';
+    name_length = *(buffer++);
+    ASSERT(name_length <= NAME_MAX_LENGTH)
+    buffer += name_length;
+    room_num = *buffer;
 
-    if (search_client_in_room(NUM_OF_ROOMS - 1, client->sockfd))
+    if (client->state = CONNECTED)
     {
-        room_num = atoi(room_str);
-        snprintf(connection_msg, sizeof(connection_msg) / sizeof(char), "%s connected.", name);
+        snprintf(connection_msg, sizeof(connection_msg) / sizeof(char), "%s connected.", client->name);
         send_message_to_room(room_num, connection_msg, sizeof(connection_msg) / sizeof(char));
-        add_client_to_room(name, room_num, client->sockfd);
+        add_client_to_room(client, room_num);
+        client->state = JOINED;
+        client->room_id = room_num;
     }
     else
     {
-        send(client->sockfd, -1, 2, 0);
+        CLIENT_FAILED(client, error, JOIN_ROOM_RESPONSE);
     }
 }
 
 void client_send_massage_in_room(client_t *client, char *buffer)
 {
-    int bytes_received;
-    char name[NAME_MAX_LENGTH];
-    char msg[DATA_MAX_LENGTH];
-    client_t *client;
+    char *msg;
+    uint8_t error[ERROR_LENGTH];
+    uint8_t name_length;
+    uint16_t msg_length;
 
-    if ((bytes_received = recv(client->sockfd, name, NAME_MAX_LENGTH, 0)) == -1)
-    {
-        perror("name recv");
-        close(client->sockfd);
-        return;
-    }
-    name[bytes_received] = '\0';
-    if ((bytes_received = recv(client->sockfd, msg, DATA_MAX_LENGTH, 0)) == -1)
-    {
-        perror("msg recv");
-        close(client->sockfd);
-        return;
-    }
-    msg[bytes_received] = '\0';
+    name_length = *(buffer++);
+    ASSERT(name_length <= NAME_MAX_LENGTH)
+    buffer += name_length;
+    msg_length = *buffer << 8 | *(++buffer);
+    ASSERT(msg_length <= DATA_MAX_LENGTH)
+    msg = buffer + 1;
+    msg[msg_length] = '\0';
 
-
-    if ((client = search_client(client->sockfd)))
+    if (client->state == JOINED)
     {
-        send_message_to_room(get_room_id(client), msg, sizeof(msg) / sizeof(char));
+        send_message_to_room(client->room_id, msg, msg_length);
     }
     else
     {
-        send(client->sockfd, -1, 2, 0);
+        CLIENT_FAILED(client, error, SEND_MESSAGE_IN_ROOM_RESPONSE);
     }
 }
 
-void client_exit_room(client_t *client, char *buffer)
+void client_exit_room(client_t *client)
 {
-    int bytes_received;
-    char name[NAME_MAX_LENGTH];
-    char disconnection_msg[NAME_MAX_LENGTH + 12];
-    client_t *client;
+    uint8_t error[ERROR_LENGTH];
+    char disconnection_msg[NAME_MAX_LENGTH + 15];
 
-    if ((bytes_received = recv(client->sockfd, name, sizeof(name) / sizeof(char), 0)) == -1)
+    if (client->state == JOINED)
     {
-        perror("name recv");
-        close(client->sockfd);
-        return;
-    }
-    name[bytes_received] = '\0';
-    if ((client = search_client(client->sockfd)))
-    {
-        remove_client_from_room(get_room_id(client), client->sockfd);
-        snprintf(disconnection_msg, sizeof(disconnection_msg) / sizeof(char), "%s connected.", name);
-        send_message_to_room(get_room_id(client), disconnection_msg, sizeof(disconnection_msg) / sizeof(char));
+        remove_client_from_room(client);
+        snprintf(disconnection_msg, sizeof(disconnection_msg) / sizeof(char), "%s disconnected.", client->name);
+        send_message_to_room(client->room_id, disconnection_msg, sizeof(disconnection_msg) / sizeof(char));
+        client->state = CONNECTED;
+        client->room_id = -1;
     }
     else
     {
-        send(client->sockfd, -1, 2, 0);
+        CLIENT_FAILED(client, error, EXIT_ROOM_RESPONSE);
     }
 }

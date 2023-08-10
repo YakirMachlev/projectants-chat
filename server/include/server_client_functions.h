@@ -15,7 +15,7 @@
 
 void client_register(client_t *client, char *buffer);
 void client_login(client_t *client, char *buffer);
-void client_list_rooms(client_t *client, char *buffer);
+void client_list_rooms(client_t *client);
 void client_join_room(client_t *client, char *buffer);
 void client_send_massage_in_room(client_t *client, char *buffer);
-void client_exit_room(client_t *client, char *buffer);
+void client_exit_room(client_t *client);

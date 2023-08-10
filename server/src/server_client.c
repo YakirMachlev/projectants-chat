@@ -5,14 +5,6 @@
     client->room_id = -1;       \
     client->state = EXISTS;
 
-struct client_t
-{
-    int sockfd;
-    uint8_t room_id;
-    char name[NAME_MAX_LENGTH];
-    state_e state;
-};
-
 void *server_client_handle_functions(void *arg)
 {
     client_t *client;
@@ -33,7 +25,7 @@ void *server_client_handle_functions(void *arg)
             {
                 perror("recv");
             }
-            client_exit_room(client, buffer_ptr);
+            client_exit_room(client);
             close(client_sockfd);
             return NULL;
         }
@@ -52,7 +44,7 @@ void *server_client_handle_functions(void *arg)
                 client_login(client, buffer_ptr);
                 break;
             case LIST_ROOMS_REQUEST:
-                client_list_rooms(client, buffer_ptr);
+                client_list_rooms(client);
                 break;
             case JOIN_ROOM_REQUEST:
                 client_join_room(client, buffer_ptr);
@@ -61,10 +53,10 @@ void *server_client_handle_functions(void *arg)
                 client_send_massage_in_room(client, buffer_ptr);
                 break;
             case EXIT_ROOM_REQUEST:
-                client_exit_room(client, buffer_ptr);
+                client_exit_room(client);
                 break;
             default:
-                client_exit_room(client, buffer_ptr);
+                client_exit_room(client);
                 close(client_sockfd);
                 return NULL;
             }
