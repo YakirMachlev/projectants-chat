@@ -1,8 +1,8 @@
 #include "server_client_functions.h"
 
-#define SEND_FAILED(client, error, opcode) \
+#define SEND_RESULT(client, error, opcode, result) \
     error[0] = opcode;                       \
-    error[1] = -1;                           \
+    error[1] = result;                           \
     send(client->sockfd, error, ERROR_LENGTH, 0);
 
 void client_register(client_t *client, char *buffer)
@@ -23,20 +23,14 @@ void client_register(client_t *client, char *buffer)
     password = buffer;
     password[password_length] = '\0';
 
-    if (client->state == EXISTS)
+    if (client->state == EXISTS && !client_file_does_client_exist(client->name))
     {
-        if (!client_file_does_client_exist(client->name))
-        {
-            insert_client_to_file(client->name, password);
-        }
-        else
-        {
-            SEND_FAILED(client, error, REGISTER_RESPONSE);
-        }
+        insert_client_to_file(client->name, password);
+        SEND_RESULT(client, error, REGISTER_RESPONSE, 0);
     }
     else
     {
-        SEND_FAILED(client, error, REGISTER_RESPONSE);
+        SEND_RESULT(client, error, REGISTER_RESPONSE, -1);
     }
 }
 
@@ -61,26 +55,20 @@ void client_login(client_t *client, char *buffer)
     password[password_length] = '\0';
     ASSERT(check_name_validity(name))
 
-    if (client->state == EXISTS)
+    if (client->state == EXISTS && client_file_check_client_validity(name, password))
     {
-        if (client_file_check_client_validity(name, password))
-        {
-            client->state = CONNECTED;
-        }
-        else
-        {
-            SEND_FAILED(client, error, LOGIN_RESPONSE);
-        }
+        client->state = CONNECTED;
+        SEND_RESULT(client, error, LOGIN_RESPONSE, 0);
     }
     else
     {
-        SEND_FAILED(client, error, LOGIN_RESPONSE);
+        SEND_RESULT(client, error, LOGIN_RESPONSE, -1);
     }
 }
 
 void client_list_rooms(client_t *client)
 {
-    uint8_t rooms_list[(NUM_OF_ROOMS << 1) + 2];
+    uint8_t rooms_list[NUM_OF_ROOMS + 2];
     uint8_t error[ERROR_LENGTH];
 
     if (client->state == CONNECTED)
@@ -90,7 +78,7 @@ void client_list_rooms(client_t *client)
     }
     else
     {
-        SEND_FAILED(client, error, LIST_ROOMS_RESPONSE);
+        SEND_RESULT(client, error, LIST_ROOMS_RESPONSE, -1);
     }
 }
 
@@ -116,36 +104,20 @@ void client_join_room(client_t *client, char *buffer)
         add_client_to_room(client, room_num);
         client->state = JOINED;
         client->room_id = room_num;
+        SEND_RESULT(client, error, JOIN_ROOM_RESPONSE, 0);
     }
     else
     {
-        SEND_FAILED(client, error, JOIN_ROOM_RESPONSE);
+        SEND_RESULT(client, error, JOIN_ROOM_RESPONSE, -1);
     }
 }
 
-void client_send_massage_in_room(client_t *client, char *buffer)
+void client_send_massage_in_room(client_t *client, char *buffer, int length)
 {
-    char *msg;
-    uint8_t error[ERROR_LENGTH];
-    uint8_t name_length;
-    uint16_t msg_length;
-
-    name_length = *(buffer++);
-    ASSERT(name_length <= NAME_MAX_LENGTH && name_length > 0)
-    buffer += name_length;
-    msg_length = *(buffer++) << 8;
-    msg_length |= *(buffer++);
-    ASSERT(msg_length <= DATA_MAX_LENGTH && msg_length > 0)
-    msg = buffer;
-    msg[msg_length] = '\0';
-
+    *buffer = SEND_MESSAGE_IN_ROOM_RESPONSE;
     if (client->state == JOINED)
     {
-        send_message_to_room(client->room_id, msg, msg_length);
-    }
-    else
-    {
-        SEND_FAILED(client, error, SEND_MESSAGE_IN_ROOM_RESPONSE);
+        send_message_to_room(client->room_id, buffer, length);
     }
 }
 
@@ -161,9 +133,10 @@ void client_exit_room(client_t *client)
         send_message_to_room(client->room_id, disconnection_msg, disconnection_msg_len);
         client->state = CONNECTED;
         client->room_id = -1;
+        SEND_RESULT(client, error, EXIT_ROOM_RESPONSE, 0);
     }
     else
     {
-        SEND_FAILED(client, error, EXIT_ROOM_RESPONSE);
+        SEND_RESULT(client, error, EXIT_ROOM_RESPONSE, -1);
     }
 }

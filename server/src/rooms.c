@@ -57,7 +57,6 @@ void get_rooms_list(client_t *client, uint8_t *rooms_list)
     pthread_mutex_lock(&(chat_rooms[client->room_id]->lock));
     for (room_num = 0; room_num < NUM_OF_ROOMS; room_num++)
     {
-        *(rooms_list++) = room_num + 1;
         *(rooms_list++) = chat_rooms[room_num]->num_of_clients;
     }
     pthread_mutex_unlock(&(chat_rooms[client->room_id]->lock));
