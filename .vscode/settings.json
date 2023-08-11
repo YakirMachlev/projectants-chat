@@ -9,6 +9,10 @@
         "netdb.h": "c",
         "server_conf.h": "c",
         "stdbool.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "stdlib.h": "c",
+        "stdio.h": "c",
+        "socket.h": "c",
+        "unistd.h": "c"
     }
 }
