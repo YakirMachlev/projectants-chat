@@ -51,7 +51,6 @@ bool client_file_does_client_exist(char *name)
     FILE *fp;
     char line[MAX_LINE_LENGTH];
     bool exists;    
-    char *line_ptr;
 
     pthread_mutex_lock(&file_lock);
     fp = fopen("users.txt", "r");
@@ -60,7 +59,6 @@ bool client_file_does_client_exist(char *name)
     {
         while (fgets(line, MAX_LINE_LENGTH, fp) && !exists)
         {
-            line_ptr = line;
             exists = compare_until_char(line, name, ',');
         }
         fclose(fp);        
@@ -75,8 +73,6 @@ bool client_file_check_client_validity(char *name, char *password)
     FILE *fp;
     char line[MAX_LINE_LENGTH];
     uint8_t length;
-    char *line_ptr;
-    bool valid;
 
     pthread_mutex_lock(&file_lock);
     fp = fopen("users.txt", "r");
@@ -85,15 +81,14 @@ bool client_file_check_client_validity(char *name, char *password)
     {
         while (fgets(line, MAX_LINE_LENGTH, fp))
         {
-            line_ptr = line;
-            if ((valid = compare_until_char(line, name, ',')))
+            if ((length = compare_until_char(line, name, ',')))
             {
-                line_ptr += length;
-                valid &= strncmp(password, line_ptr, PASSWORD_MAX_LENGTH);
+                length &= strncmp(password, line + length + 1, PASSWORD_MAX_LENGTH);
                 break;
             }
         }
         fclose(fp);        
     }
     pthread_mutex_unlock(&file_lock);
+    return length;
 }

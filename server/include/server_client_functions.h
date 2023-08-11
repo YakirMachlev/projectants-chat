@@ -11,7 +11,6 @@
 #include <unistd.h>
 #include "rooms.h"
 #include "clients_file.h"
-#include "server_conf.h"
 
 void client_register(client_t *client, char *buffer);
 void client_login(client_t *client, char *buffer);

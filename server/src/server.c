@@ -1,17 +1,14 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <pthread.h>
-#include <stdbool.h>
+int connected_clients = 0;
 #include "server_client.h"
 
-void *handle_clients(int server_sockfd)
+void *handle_clients(void *arg)
 {
     int client_temp_sockfd;
     void *client_sockfd;
     pthread_t client_thread;
+    int server_sockfd;
 
+    server_sockfd = *(int *)arg;
     while (true)
     {
         client_sockfd = (int *)malloc(sizeof(int));
@@ -27,7 +24,7 @@ void *handle_clients(int server_sockfd)
         *(int *)client_sockfd = client_temp_sockfd;
         if (connected_clients > NUM_OF_CONNECTIONS)
         {
-            send(client_sockfd, SERVER_FULL_MSG, strlen(SERVER_FULL_MSG), 0);
+            send(client_temp_sockfd, SERVER_FULL_MSG, strlen(SERVER_FULL_MSG), 0);
         }
         else
         {

@@ -21,7 +21,6 @@ void init_chat_rooms()
 
 void add_client_to_room(client_t *client, uint8_t room_num)
 {
-    client_t *client;
     uint8_t room_num_of_clients;
 
     pthread_mutex_lock(&(chat_rooms[room_num]->lock));

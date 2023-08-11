@@ -22,7 +22,7 @@ void client_register(client_t *client, char *buffer)
     password = buffer;
     password[password_length] = '\0';
 
-    if (client->state = EXISTS && check_name_validity(client->name))
+    if (client->state == EXISTS && check_name_validity(client->name))
     {
         if (!client_file_does_client_exist(client->name))
         {
@@ -43,7 +43,6 @@ void client_login(client_t *client, char *buffer)
 {
     char *name;
     char *password;
-    char written_password[PASSWORD_MAX_LENGTH];
     uint8_t error[ERROR_LENGTH];
     uint8_t name_length;
     uint8_t password_length;
@@ -60,7 +59,7 @@ void client_login(client_t *client, char *buffer)
     name[name_length] = '\0';
     password[password_length] = '\0';
 
-    if (client->state = EXISTS && check_name_validity(name))
+    if (client->state == EXISTS && check_name_validity(name))
     {
         if (client_file_check_client_validity(name, password))
         {
@@ -96,19 +95,22 @@ void client_list_rooms(client_t *client)
 void client_join_room(client_t *client, char *buffer)
 {
     uint8_t room_num;
-    char connection_msg[NAME_MAX_LENGTH + 12];
+    char connection_msg[NAME_MAX_LENGTH + 11];
     uint8_t error[ERROR_LENGTH];
     uint8_t name_length;
+    uint8_t connection_msg_len;
 
     name_length = *(buffer++);
     ASSERT(name_length <= NAME_MAX_LENGTH && name_length > 0)
     buffer += name_length;
     room_num = *buffer;
-
-    if (client->state = CONNECTED)
+    ASSERT(room_num <= 5 && room_num >= 1)
+    room_num--; /* assuming that the client isn't aware that arrays start at 0 */
+    
+    if (client->state == CONNECTED)
     {
-        snprintf(connection_msg, sizeof(connection_msg) / sizeof(char), " connected.", client->name);
-        send_message_to_room(room_num, connection_msg, sizeof(connection_msg) / sizeof(char));
+        connection_msg_len = sprintf(connection_msg, "%s connected.", client->name);
+        send_message_to_room(room_num, connection_msg, connection_msg_len);
         add_client_to_room(client, room_num);
         client->state = JOINED;
         client->room_id = room_num;
@@ -129,9 +131,10 @@ void client_send_massage_in_room(client_t *client, char *buffer)
     name_length = *(buffer++);
     ASSERT(name_length <= NAME_MAX_LENGTH && name_length > 0)
     buffer += name_length;
-    msg_length = *buffer << 8 | *(++buffer);
+    msg_length = *(buffer++) << 8;
+    msg_length |= *(buffer++);
     ASSERT(msg_length <= DATA_MAX_LENGTH && msg_length > 0)
-    msg = buffer + 1;
+    msg = buffer;
     msg[msg_length] = '\0';
 
     if (client->state == JOINED)
@@ -147,13 +150,13 @@ void client_send_massage_in_room(client_t *client, char *buffer)
 void client_exit_room(client_t *client)
 {
     uint8_t error[ERROR_LENGTH];
-    char disconnection_msg[NAME_MAX_LENGTH + 15];
-
+    char disconnection_msg[NAME_MAX_LENGTH + 14];
+    uint8_t disconnection_msg_len;
     if (client->state == JOINED)
     {
         remove_client_from_room(client);
-        snprintf(disconnection_msg, sizeof(disconnection_msg) / sizeof(char), "%s disconnected.", client->name);
-        send_message_to_room(client->room_id, disconnection_msg, sizeof(disconnection_msg) / sizeof(char));
+        disconnection_msg_len = sprintf(disconnection_msg, "%s disconnected.", client->name);
+        send_message_to_room(client->room_id, disconnection_msg, disconnection_msg_len);
         client->state = CONNECTED;
         client->room_id = -1;
     }

@@ -10,11 +10,11 @@
 #define DATA_MAX_LENGTH 1 << (sizeof(uint16_t) * 8)
 #define ERROR_LENGTH 2
 
-int connected_clients = 0;
 
 #define CLIENT_DISCONNECT     \
     client_exit_room(client); \
     close(client->sockfd);    \
+    free(client);             \
     connected_clients--;      \
     pthread_exit(NULL);
 

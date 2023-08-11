@@ -1,8 +1,9 @@
 #include "server_client.h"
 
-#define INIT_CLIENT(client, fd) \
-    client->sockfd = fd;        \
-    client->room_id = -1;       \
+#define INIT_CLIENT(client, fd)                  \
+    client = (client_t *)malloc(sizeof(client)); \
+    client->sockfd = fd;                         \
+    client->room_id = -1;                        \
     client->state = EXISTS;
 
 void *server_client_handle_functions(void *arg)
@@ -15,6 +16,7 @@ void *server_client_handle_functions(void *arg)
     int bytes_received;
 
     client_sockfd = *(int *)arg;
+    free(arg);
     INIT_CLIENT(client, client_sockfd)
 
     while (true)
