@@ -15,6 +15,7 @@ void client_register(client_t *client, char *buffer)
     name_length = *(buffer++);
     ASSERT(name_length <= NAME_MAX_LENGTH && name_length > 0)
     strncpy(client->name, buffer, name_length);
+    ASSERT(check_name_validity(client->name))
 
     buffer += name_length;
     password_length = *(buffer++);
@@ -22,7 +23,7 @@ void client_register(client_t *client, char *buffer)
     password = buffer;
     password[password_length] = '\0';
 
-    if (client->state == EXISTS && check_name_validity(client->name))
+    if (client->state == EXISTS)
     {
         if (!client_file_does_client_exist(client->name))
         {
@@ -58,8 +59,9 @@ void client_login(client_t *client, char *buffer)
 
     name[name_length] = '\0';
     password[password_length] = '\0';
+    ASSERT(check_name_validity(name))
 
-    if (client->state == EXISTS && check_name_validity(name))
+    if (client->state == EXISTS)
     {
         if (client_file_check_client_validity(name, password))
         {

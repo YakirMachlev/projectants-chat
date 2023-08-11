@@ -1,4 +1,3 @@
-int connected_clients = 0;
 #include "server_client.h"
 
 void *handle_clients(void *arg)
@@ -29,7 +28,7 @@ void *handle_clients(void *arg)
         else
         {
             pthread_create(&client_thread, NULL, server_client_handle_functions, client_sockfd);
-            pthread_detach(client_thread);            
+            pthread_detach(client_thread);
         }
     }
     return NULL;

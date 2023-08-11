@@ -10,6 +10,7 @@
 #define DATA_MAX_LENGTH 1 << (sizeof(uint16_t) * 8)
 #define ERROR_LENGTH 2
 
+static int connected_clients = 0;
 
 #define CLIENT_DISCONNECT     \
     client_exit_room(client); \
@@ -47,7 +48,7 @@ typedef enum
     JOIN_ROOM_REQUEST,
     SEND_MESSAGE_IN_ROOM_REQUEST,
     EXIT_ROOM_REQUEST
-} s_func_e;
+} request_e;
 
 typedef enum
 {
@@ -58,4 +59,4 @@ typedef enum
     SEND_MESSAGE_IN_ROOM_RESPONSE,
     EXIT_ROOM_RESPONSE,
     SEND_SERVER_MESSAGE_IN_ROOM = 211
-} c_func_e;
+} response_e;
