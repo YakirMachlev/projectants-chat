@@ -25,9 +25,7 @@ void *server_client_handle_functions(void *arg)
             {
                 perror("recv");
             }
-            client_exit_room(client);
-            close(client_sockfd);
-            return NULL;
+            ASSERT(1)
         }
         else
         {
@@ -56,9 +54,7 @@ void *server_client_handle_functions(void *arg)
                 client_exit_room(client);
                 break;
             default:
-                client_exit_room(client);
-                close(client_sockfd);
-                return NULL;
+                ASSERT(1)
             }
         }
     }

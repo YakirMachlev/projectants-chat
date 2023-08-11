@@ -1,19 +1,8 @@
 #include "server_client_functions.h"
 
-#define CLIENT_DISCONNECT     \
-    client_exit_room(client); \
-    close(client->sockfd);    \
-    pthread_exit(NULL);
-
-#define ASSERT(expression) \
-    if (expression)        \
-    {                      \
-        CLIENT_DISCONNECT  \
-    }
-
-#define CLIENT_FAILED(client, error, opcode) \
-    error[0] = opcode; \
-    error[1] = -1; \
+#define SEND_FAILED(client, error, opcode) \
+    error[0] = opcode;                       \
+    error[1] = -1;                           \
     send(client->sockfd, error, ERROR_LENGTH, 0);
 
 void client_register(client_t *client, char *buffer)
@@ -24,12 +13,12 @@ void client_register(client_t *client, char *buffer)
     uint8_t password_length;
 
     name_length = *(buffer++);
-    ASSERT(name_length <= NAME_MAX_LENGTH)
+    ASSERT(name_length <= NAME_MAX_LENGTH && name_length > 0)
     strncpy(client->name, buffer, name_length);
 
     buffer += name_length;
     password_length = *(buffer++);
-    ASSERT(password_length <= PASSWORD_MAX_LENGTH)
+    ASSERT(password_length <= PASSWORD_MAX_LENGTH && password_length > 0)
     password = buffer;
     password[password_length] = '\0';
 
@@ -41,12 +30,12 @@ void client_register(client_t *client, char *buffer)
         }
         else
         {
-            CLIENT_FAILED(client, error, REGISTER_RESPONSE);
+            SEND_FAILED(client, error, REGISTER_RESPONSE);
         }
     }
     else
     {
-        CLIENT_FAILED(client, error, REGISTER_RESPONSE);
+        SEND_FAILED(client, error, REGISTER_RESPONSE);
     }
 }
 
@@ -60,12 +49,12 @@ void client_login(client_t *client, char *buffer)
     uint8_t password_length;
 
     name_length = *(buffer++);
-    ASSERT(name_length <= NAME_MAX_LENGTH)
+    ASSERT(name_length <= NAME_MAX_LENGTH && name_length > 0)
     name = buffer;
 
     buffer += name_length;
     password_length = *(buffer++);
-    ASSERT(password_length <= PASSWORD_MAX_LENGTH)
+    ASSERT(password_length <= PASSWORD_MAX_LENGTH && password_length > 0)
     password = buffer;
 
     name[name_length] = '\0';
@@ -79,12 +68,12 @@ void client_login(client_t *client, char *buffer)
         }
         else
         {
-            CLIENT_FAILED(client, error, LOGIN_RESPONSE);
-        }    
+            SEND_FAILED(client, error, LOGIN_RESPONSE);
+        }
     }
     else
     {
-        CLIENT_FAILED(client, error, LOGIN_RESPONSE);
+        SEND_FAILED(client, error, LOGIN_RESPONSE);
     }
 }
 
@@ -100,7 +89,7 @@ void client_list_rooms(client_t *client)
     }
     else
     {
-        CLIENT_FAILED(client, error, LIST_ROOMS_RESPONSE);
+        SEND_FAILED(client, error, LIST_ROOMS_RESPONSE);
     }
 }
 
@@ -112,13 +101,13 @@ void client_join_room(client_t *client, char *buffer)
     uint8_t name_length;
 
     name_length = *(buffer++);
-    ASSERT(name_length <= NAME_MAX_LENGTH)
+    ASSERT(name_length <= NAME_MAX_LENGTH && name_length > 0)
     buffer += name_length;
     room_num = *buffer;
 
     if (client->state = CONNECTED)
     {
-        snprintf(connection_msg, sizeof(connection_msg) / sizeof(char), "%s connected.", client->name);
+        snprintf(connection_msg, sizeof(connection_msg) / sizeof(char), " connected.", client->name);
         send_message_to_room(room_num, connection_msg, sizeof(connection_msg) / sizeof(char));
         add_client_to_room(client, room_num);
         client->state = JOINED;
@@ -126,7 +115,7 @@ void client_join_room(client_t *client, char *buffer)
     }
     else
     {
-        CLIENT_FAILED(client, error, JOIN_ROOM_RESPONSE);
+        SEND_FAILED(client, error, JOIN_ROOM_RESPONSE);
     }
 }
 
@@ -138,10 +127,10 @@ void client_send_massage_in_room(client_t *client, char *buffer)
     uint16_t msg_length;
 
     name_length = *(buffer++);
-    ASSERT(name_length <= NAME_MAX_LENGTH)
+    ASSERT(name_length <= NAME_MAX_LENGTH && name_length > 0)
     buffer += name_length;
     msg_length = *buffer << 8 | *(++buffer);
-    ASSERT(msg_length <= DATA_MAX_LENGTH)
+    ASSERT(msg_length <= DATA_MAX_LENGTH && msg_length > 0)
     msg = buffer + 1;
     msg[msg_length] = '\0';
 
@@ -151,7 +140,7 @@ void client_send_massage_in_room(client_t *client, char *buffer)
     }
     else
     {
-        CLIENT_FAILED(client, error, SEND_MESSAGE_IN_ROOM_RESPONSE);
+        SEND_FAILED(client, error, SEND_MESSAGE_IN_ROOM_RESPONSE);
     }
 }
 
@@ -170,6 +159,6 @@ void client_exit_room(client_t *client)
     }
     else
     {
-        CLIENT_FAILED(client, error, EXIT_ROOM_RESPONSE);
+        SEND_FAILED(client, error, EXIT_ROOM_RESPONSE);
     }
 }

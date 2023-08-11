@@ -21,14 +21,15 @@ void insert_client_to_file(char *name, char *password)
 
     pthread_mutex_lock(&file_lock);
     fp = fopen("users.txt", "a");
-    assert("Couldn't open the file" && fp);
+    if (fp)
+    {
+        fputs(name, fp);
+        fputc(',', fp);
+        fputs(password, fp);
+        fputc('\n', fp);
 
-    fputs(name, fp);
-    fputc(',', fp);
-    fputs(password, fp);
-    fputc('\n', fp);
-
-    fclose(fp);
+        fclose(fp);
+    }
     pthread_mutex_unlock(&file_lock);
 }
 

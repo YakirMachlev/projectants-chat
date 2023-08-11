@@ -7,13 +7,11 @@ struct room_t
     pthread_mutex_t lock;
 };
 
-room_t *chat_rooms[NUM_OF_ROOMS];
-pthread_mutex_t room_lock;
+static room_t *chat_rooms[NUM_OF_ROOMS];
 
 void init_chat_rooms()
 {
     int room_num;
-    pthread_mutex_init(&room_lock, NULL);
     for (room_num = 0; room_num < NUM_OF_ROOMS; ++room_num)
     {
         chat_rooms[room_num]->num_of_clients = 0;
@@ -57,11 +55,13 @@ void get_rooms_list(client_t *client, uint8_t *rooms_list)
 
     *(rooms_list++) = LIST_ROOMS_RESPONSE;
     *(rooms_list++) = NUM_OF_ROOMS;
+    pthread_mutex_lock(&(chat_rooms[client->room_id]->lock));
     for (room_num = 0; room_num < NUM_OF_ROOMS; room_num++)
     {
         *(rooms_list++) = room_num + 1;
         *(rooms_list++) = chat_rooms[room_num]->num_of_clients;
     }
+    pthread_mutex_unlock(&(chat_rooms[client->room_id]->lock));
 }
 
 void send_message_to_room(uint8_t room_id, char *msg, int len)
