@@ -23,10 +23,22 @@
 
 typedef enum
 {
+    NONE,
     EXISTS,
     CONNECTED,
     JOINED
 } state_e;
+
+typedef struct 
+{
+    int sockfd;
+    char name[NAME_MAX_LENGTH];
+    uint8_t name_length;
+    uint8_t room_id;
+    state_e state;
+} client_t;
+
+extern client_t *client;
 
 typedef enum
 {

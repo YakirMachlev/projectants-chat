@@ -20,5 +20,7 @@
 #define NOT_CONNECTED "The client with the given name isn't connected"
 #define CLIENT_CANT_JOIN "Client already in another room / not connected"
 
-void client_functions_register(int sockfd);
-void client_functions_login(int sockfd);
+void client_requests_register(int sockfd);
+void client_requests_login(int sockfd);
+void client_requests_list_rooms(int sockfd);
+void client_requests_join_room(int sockfd);

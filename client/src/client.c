@@ -4,11 +4,8 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <stdbool.h>
-#include "client_functions.h"
 #include "client_ui.h"
 #include "client_recv.h"
-
-state_e client_state;
 
 int client_find_server_valid_address(struct addrinfo *servinfo)
 {
@@ -63,22 +60,8 @@ int main()
 
     sockfd = client_find_server_valid_address(servinfo);
 
-    pthread_create(&receive_thread, NULL, receive_data_from_server, (void *)&sockfd);
     pthread_create(&client_ui_thread, NULL, client_ui_start, (void *)&sockfd);
-
-    while (true)
-    {
-        bytes_sent = send(sockfd, input, strlen(input), 0);
-        if (bytes_sent == -1)
-        {
-        }
-
-        if (strcmp(input, "~`") == 0)
-        {
-            break;
-        }
-    }
-    close(sockfd);
+    pthread_create(&receive_thread, NULL, receive_data_from_server, (void *)&sockfd);
 
     return 0;
 }

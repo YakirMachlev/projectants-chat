@@ -1,6 +1,6 @@
 #include "client_recv.h"
 
-static void handle_recv_from_server(int sockfd, char *buffer, int length)
+static void handle_recv_from_server(char *buffer, int length)
 {
     response_e response;
     uint8_t result;
@@ -13,18 +13,25 @@ static void handle_recv_from_server(int sockfd, char *buffer, int length)
         client_ui_register_response(buffer);
         break;
     case LOGIN_RESPONSE:
+        client_ui_login_response(buffer);
         break;
     case LIST_ROOMS_RESPONSE:
+        client_ui_list_rooms_response(buffer);
         break;
     case JOIN_ROOM_RESPONSE:
+        client_ui_join_room_response(buffer);
         break;
     case SEND_MESSAGE_IN_ROOM_RESPONSE:
+        client_ui_send_message_in_room_response(buffer);
         break;
     case EXIT_ROOM_RESPONSE:
+        client_ui_exit_room_response(buffer);
         break;
     case SEND_SERVER_MESSAGE_IN_ROOM:
+        printf("%s", buffer);
         break;
     default:
+        printf("%s", "Invalid response.\n");
         break;
     }
 }
@@ -32,7 +39,7 @@ static void handle_recv_from_server(int sockfd, char *buffer, int length)
 void *receive_data_from_server(void *arg)
 {
     int sockfd;
-    char buffer[DATA_MAX_LENGTH + 1];
+    char buffer[DATA_MAX_LENGTH];
     int bytes_received;
 
     sockfd = *((int *)arg);
@@ -53,7 +60,7 @@ void *receive_data_from_server(void *arg)
             break;
         }
         buffer[bytes_received] = '\0';
-        handle_recv_from_server(sockfd, buffer, bytes_received);
+        handle_recv_from_server(buffer, bytes_received);
     }
 
     return NULL;
