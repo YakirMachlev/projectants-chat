@@ -11,8 +11,8 @@ void *server_client_handle_functions(void *arg)
     client_t *client;
     int client_sockfd;
     uint8_t opcode;
-    char buffer[DATA_MAX_LENGTH];
-    char *buffer_ptr;
+    uint8_t buffer[DATA_MAX_LENGTH];
+    uint8_t *buffer_ptr;
     int bytes_received;
 
     client_sockfd = *(int *)arg;

@@ -1,5 +1,7 @@
 #include "server_client.h"
 
+int connected_clients;
+
 void *handle_clients(void *arg)
 {
     int client_temp_sockfd;
@@ -79,6 +81,7 @@ int main()
     pthread_t server_thread;
 
     init_chat_rooms();
+    connected_clients = 0;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;

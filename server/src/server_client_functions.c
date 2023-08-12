@@ -5,7 +5,7 @@
     error[1] = result;                           \
     send(client->sockfd, error, ERROR_LENGTH, 0);
 
-void client_register(client_t *client, char *buffer)
+void client_register(client_t *client, uint8_t *buffer)
 {
     char *password;
     uint8_t error[ERROR_LENGTH];
@@ -14,13 +14,13 @@ void client_register(client_t *client, char *buffer)
 
     name_length = *(buffer++);
     ASSERT(name_length <= NAME_MAX_LENGTH && name_length > 0)
-    strncpy(client->name, buffer, name_length);
+    strncpy(client->name, (char *)buffer, name_length);
     ASSERT(check_name_validity(client->name))
 
     buffer += name_length;
     password_length = *(buffer++);
     ASSERT(password_length <= PASSWORD_MAX_LENGTH && password_length > 0)
-    password = buffer;
+    password = (char *)buffer;
     password[password_length] = '\0';
 
     if (client->state == EXISTS && !client_file_does_client_exist(client->name))
@@ -34,7 +34,7 @@ void client_register(client_t *client, char *buffer)
     }
 }
 
-void client_login(client_t *client, char *buffer)
+void client_login(client_t *client, uint8_t *buffer)
 {
     char *name;
     char *password;
@@ -44,12 +44,12 @@ void client_login(client_t *client, char *buffer)
 
     name_length = *(buffer++);
     ASSERT(name_length <= NAME_MAX_LENGTH && name_length > 0)
-    name = buffer;
+    name = (char *)buffer;
 
     buffer += name_length;
     password_length = *(buffer++);
     ASSERT(password_length <= PASSWORD_MAX_LENGTH && password_length > 0)
-    password = buffer;
+    password = (char *)buffer;
 
     name[name_length] = '\0';
     password[password_length] = '\0';
@@ -82,7 +82,7 @@ void client_list_rooms(client_t *client)
     }
 }
 
-void client_join_room(client_t *client, char *buffer)
+void client_join_room(client_t *client, uint8_t *buffer)
 {
     uint8_t room_num;
     char connection_msg[NAME_MAX_LENGTH + 11];
@@ -112,12 +112,12 @@ void client_join_room(client_t *client, char *buffer)
     }
 }
 
-void client_send_massage_in_room(client_t *client, char *buffer, int length)
+void client_send_massage_in_room(client_t *client, uint8_t *buffer, int length)
 {
     *buffer = SEND_MESSAGE_IN_ROOM_RESPONSE;
     if (client->state == JOINED)
     {
-        send_message_to_room(client->room_id, buffer, length);
+        send_message_to_room(client->room_id, (char *)buffer, length);
     }
 }
 

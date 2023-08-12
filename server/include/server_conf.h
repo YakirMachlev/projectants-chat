@@ -10,7 +10,7 @@
 #define DATA_MAX_LENGTH 1 << (sizeof(uint16_t) * 8)
 #define ERROR_LENGTH 2
 
-static int connected_clients = 0;
+extern int connected_clients;
 
 #define CLIENT_DISCONNECT     \
     client_exit_room(client); \
