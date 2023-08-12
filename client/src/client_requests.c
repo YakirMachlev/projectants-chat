@@ -61,3 +61,12 @@ void client_requests_join_room(int sockfd)
     buffer[client->name_length + 2] = client->room_id;
     send(sockfd, buffer, sizeof(buffer) / sizeof(char), 0);
 }
+
+void client_requests_send_message_in_room(int sockfd, char *msg, uint16_t msg_length)
+{
+    char buffer[DATA_MAX_LENGTH];
+    uint16_t total_length;
+
+    total_length = snprintf(buffer, DATA_MAX_LENGTH, "%d%d%s%d%s", SEND_MESSAGE_IN_ROOM_REQUEST, client->name_length, client->name, msg_length, msg);
+    send(sockfd, buffer, total_length, 0);
+}

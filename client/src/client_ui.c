@@ -40,6 +40,7 @@ void client_ui_second_hierarchy(int sockfd)
 {
     uint8_t room_num;
     char buffer[DATA_MAX_LENGTH];
+    uint16_t buffer_length;
 
     client_requests_list_rooms(sockfd);
     /* wait for response from server */
@@ -48,6 +49,14 @@ void client_ui_second_hierarchy(int sockfd)
 
     client->room_id = room_num;
     client_requests_join_room(sockfd);
+
+    *buffer = '-';
+    while (strncmp(buffer, "~`", 3))
+    {
+        scanf("%s", buffer);
+        buffer_length = strlen(buffer);
+        client_requests_send_message_in_room(sockfd, buffer, buffer_length);
+    }
 }
 
 
@@ -140,16 +149,23 @@ void client_ui_join_room_response(char *buffer)
 void client_ui_send_message_in_room_response(char *buffer)
 {
     uint8_t result;
+    char *name;
+    char *msg;
+    uint8_t name_length;
+    uint16_t msg_length;
 
-    if (strncmp(buffer, "~`", 3))
-    {
-        printf("%s", "Existing the program\n");
-        exit(0);
-    }
-    else
-    {
-        printf("%s", buffer);
-    }
+    name_length = *(buffer++);
+    name = buffer;
+
+    buffer += name_length;
+    msg_length = *(buffer++) << 8;
+    msg_length |= *(buffer++);
+    msg = buffer;
+
+    name[name_length] = '\0';
+    msg[msg_length] = '\0';
+
+    printf("%s: %s", name, msg);
 }
 
 void client_ui_exit_room_response(char *buffer)
@@ -159,13 +175,13 @@ void client_ui_exit_room_response(char *buffer)
     result = *buffer;
     if (result == 0)
     {
-        printf("%s", "Join succeded\n");
+        printf("%s", "Exit room succeded\n");
         client->state = CONNECTED;
         client_ui_second_hierarchy(client->sockfd);
     }
     else if (result == -1)
     {
-        printf("%s", "Join failed\n");
+        printf("%s", "Exit room failed\n");
     }
     else
     {
