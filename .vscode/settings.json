@@ -17,6 +17,10 @@
         "client_functions.h": "c",
         "client_conf.h": "c",
         "client_ui.h": "c",
-        "client_recv.h": "c"
+        "client_recv.h": "c",
+        "client_requests.h": "c",
+        "in.h": "c",
+        "types.h": "c",
+        "typeinfo": "c"
     }
 }
